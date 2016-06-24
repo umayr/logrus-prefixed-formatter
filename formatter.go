@@ -29,6 +29,15 @@ func miniTS() int {
 	return int(time.Since(baseTimestamp) / time.Second)
 }
 
+type Colors struct {
+	Debug   string
+	Info    string
+	Warn    string
+	Error   string
+	Prefix  string
+	Default string
+}
+
 type TextFormatter struct {
 	// Set to true to bypass checking for a TTY before outputting colors.
 	ForceColors bool
@@ -50,6 +59,30 @@ type TextFormatter struct {
 	// that log extremely frequently and don't use the JSON formatter this may not
 	// be desired.
 	DisableSorting bool
+
+	// Set custom 256-bit colors for the colored output.
+	// Available colors:
+	// - black
+	// - red
+	// - green
+	// - yellow
+	// - blue
+	// - magenta
+	// - cyan
+	// - white
+	// - 0...255 (256 colors)
+	//
+	// Available attributes:
+	// b = bold foreground
+	// B = blink foreground
+	// u = underline foreground
+	// i = inverse
+	//
+	// Style should be formatted as: "foregroundColor+attributes:backgroundColor+attributes"
+	// For example,
+	// "white+u:black" - display underlined white text on black background
+	// "red+b:white" - display red with bold text on white background
+	Colors *Colors
 }
 
 func (f *TextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
@@ -98,14 +131,46 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry, keys 
 	var levelColor string
 	var levelText string
 	switch entry.Level {
+	case logrus.DebugLevel:
+		levelColor = func() string {
+			c := ansi.White
+			if f.Colors.Debug != "" {
+				c = ansi.ColorCode(f.Colors.Debug)
+			}
+			return c
+		}()
 	case logrus.InfoLevel:
-		levelColor = ansi.Blue
+		levelColor = func() string {
+			c := ansi.Blue
+			if f.Colors.Info != "" {
+				c = ansi.ColorCode(f.Colors.Info)
+			}
+			return c
+		}()
 	case logrus.WarnLevel:
-		levelColor = ansi.Yellow
+		levelColor = func() string {
+			c := ansi.Yellow
+			if f.Colors.Warn != "" {
+				c = ansi.ColorCode(f.Colors.Warn)
+			}
+			return c
+		}()
 	case logrus.ErrorLevel, logrus.FatalLevel, logrus.PanicLevel:
-		levelColor = ansi.Red
+		levelColor = func() string {
+			c := ansi.Red
+			if f.Colors.Error != "" {
+				c = ansi.ColorCode(f.Colors.Error)
+			}
+			return c
+		}()
 	default:
-		levelColor = ansi.White
+		levelColor = func() string {
+			c := ansi.White
+			if f.Colors.Default != "" {
+				c = ansi.ColorCode(f.Colors.Default)
+			}
+			return c
+		}()
 	}
 
 	if entry.Level != logrus.WarnLevel {
@@ -116,21 +181,25 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry, keys 
 
 	prefix := ""
 	message := entry.Message
+	prefixColor := ansi.LightBlack
+	if f.Colors.Prefix != "" {
+		prefixColor = ansi.ColorCode(f.Colors.Prefix)
+	}
 
 	if prefixValue, ok := entry.Data["prefix"]; ok {
-		prefix = fmt.Sprint(" ", ansi.LightBlack, prefixValue, ":", reset)
+		prefix = fmt.Sprintf("%s %s:%s", prefixColor, prefixValue, reset)
 	} else {
 		prefixValue, trimmedMsg := extractPrefix(entry.Message)
-		if len(prefixValue) > 0 {
-			prefix = fmt.Sprint(" ", ansi.LightBlack, prefixValue, ":", reset)
+		if prefixValue != "" {
+			prefix = fmt.Sprintf("%s %s:%s", prefixColor, prefixValue, reset)
 			message = trimmedMsg
 		}
 	}
 
 	if f.ShortTimestamp {
-		fmt.Fprintf(b, "%s[%04d]%s %s%+5s%s%s %s", ansi.LightBlack, miniTS(), reset, levelColor, levelText, reset, prefix, message)
+		fmt.Fprintf(b, "%s[%04d]%s %s%+5s%s%s %s", prefixColor, miniTS(), reset, levelColor, levelText, reset, prefix, message)
 	} else {
-		fmt.Fprintf(b, "%s[%s]%s %s%+5s%s%s %s", ansi.LightBlack, entry.Time.Format(timestampFormat), reset, levelColor, levelText, reset, prefix, message)
+		fmt.Fprintf(b, "%s[%s]%s %s%+5s%s%s %s", prefixColor, entry.Time.Format(timestampFormat), reset, levelColor, levelText, reset, prefix, message)
 	}
 	for _, k := range keys {
 		v := entry.Data[k]
