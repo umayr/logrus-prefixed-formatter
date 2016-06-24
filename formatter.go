@@ -99,13 +99,13 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry, keys 
 	var levelText string
 	switch entry.Level {
 	case logrus.InfoLevel:
-		levelColor = ansi.Green
+		levelColor = ansi.Blue
 	case logrus.WarnLevel:
 		levelColor = ansi.Yellow
 	case logrus.ErrorLevel, logrus.FatalLevel, logrus.PanicLevel:
 		levelColor = ansi.Red
 	default:
-		levelColor = ansi.Blue
+		levelColor = ansi.White
 	}
 
 	if entry.Level != logrus.WarnLevel {
@@ -118,11 +118,11 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry, keys 
 	message := entry.Message
 
 	if prefixValue, ok := entry.Data["prefix"]; ok {
-		prefix = fmt.Sprint(" ", ansi.Cyan, prefixValue, ":", reset)
+		prefix = fmt.Sprint(" ", ansi.LightBlack, prefixValue, ":", reset)
 	} else {
 		prefixValue, trimmedMsg := extractPrefix(entry.Message)
 		if len(prefixValue) > 0 {
-			prefix = fmt.Sprint(" ", ansi.Cyan, prefixValue, ":", reset)
+			prefix = fmt.Sprint(" ", ansi.LightBlack, prefixValue, ":", reset)
 			message = trimmedMsg
 		}
 	}
