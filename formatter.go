@@ -187,9 +187,9 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *logrus.Entry, keys 
 	}
 
 	if prefixValue, ok := entry.Data["prefix"]; ok {
-		prefix = fmt.Sprintf("%s %s:%s", prefixColor, prefixValue, reset)
+		prefix = fmt.Sprintf("%s (%s):%s", prefixColor, prefixValue, reset)
 	} else if prefixValue, trimmedMsg := extractPrefix(entry.Message); prefixValue != "" {
-		prefix, message = fmt.Sprintf("%s %s:%s", prefixColor, prefixValue, reset), trimmedMsg
+		prefix, message = fmt.Sprintf("%s (%s):%s", prefixColor, prefixValue, reset), trimmedMsg
 	}
 
 	if f.ShortTimestamp {
