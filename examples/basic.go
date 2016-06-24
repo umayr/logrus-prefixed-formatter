@@ -8,7 +8,15 @@ import (
 var log = logrus.New()
 
 func init() {
-	log.Formatter = new(prefixed.TextFormatter)
+	log.Formatter = &prefixed.TextFormatter{
+		Colors: &prefixed.Colors{
+			Prefix: "12+b",
+			Debug:  "253",
+			Warn:   "178",
+			Info:   "74",
+			Error:  "9",
+		},
+	}
 	log.Level = logrus.DebugLevel
 }
 
